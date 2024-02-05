@@ -354,7 +354,8 @@
         },
         { "role": "user", "content": text }
       ],
-      "temperature": temperature,
+      "temperature": Number(temperature)
+      ,
       "top_p": 0,
       "n": 1,
       "stream": false,
@@ -421,15 +422,10 @@
     if (defaultResquest){
       description.value=defaultResquest
     }else {
-      description.value= "Hãy đón vai trò là một trợ lý dịch thuật, chuyển đổi giúp tôi nội dung sau sang ngôn ngữ tiếng Anh (theo từng dòng), kết trả về ở định dạng json là list, KHÔNG ĐỀ CẬP GÌ THÊM NGOÀI KẾT QUẢ NÀY,  dữ liệu ở dạng text thuần, không bao gồm kí tự đầu dòng, nháy đơn, nháy kép hoặc số thứ tự. Nội dung cần dịch như sau: "
+      description.value =defaultDescription
     }
     description.style.display='block'
     btnSave.style.display='block'
-    // const requestDes = prompt("Vui lòng thêm mô tả cụ thể cho yêu cầu của bạn");
-    // if (requestDes !== null && requestDes !== "") {
-    //   localStorage.setItem("requestDes", requestDes);
-    //   alert("Đã thêm thành công yêu cầu");
-    // }
   }
   function saveDes() {
     const description=document.getElementById(
