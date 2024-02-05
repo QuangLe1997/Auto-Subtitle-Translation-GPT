@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Subtitle Translation</title>
+  <style>
+      body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 0;
+          background-color: #f4f4f4;
+      }
+      .container {
+          display: flex;
+          max-width: 900px;
+          margin: 20px auto;
+          padding: 20px;
+          background-color: #fff;
+          border-radius: 8px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .title-app {
+          max-width: 900px;
+          margin: 20px auto;
+          padding: 20px;
+          background-color: #fff;
+          border-radius: 8px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .left, .right {
+          flex-grow: 1;
+          padding: 0 10px;
+          width: 50%;
+          position: relative;
+      }
+      h2 {
+          text-align: center;
+      }
+      textarea, input[type="text"] {
+          width: 100%;
+          height: 365px;
+          margin-bottom: 10px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          resize: none;
+      }
+      #fileInputBtn {
+          display: inline-block;
+          padding: 10px 20px;
+          margin-bottom: 10px;
+          border: none;
+          border-radius: 4px;
+          background-color: #0d5d49;
+          color: #fff;
+          font-size: 16px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+      }
+      #fileInputBtn:hover {
+          background-color: #03261e;
+      }
+      #output {
+          width: 100%;
+          height: 350px;
+          padding: 10px;
+          margin-bottom: 10px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          overflow-y: auto;
+          resize: none;
+      }
+      #status-result {
+          font-size: 14px;
+          font-style: italic;
+          margin-bottom: 10px;
+      }
+      #temperature {
+          padding: 10px 0;
+          border: #0d5d49 1px solid;
+          width: 60px;
+          text-align: center;
+          border-radius: 4px;
+          box-sizing: border-box; /* Kích thước tính cả phần viền */
+      }
+      #errors{
+          color: red;
+      }
+      .btn-group {
+          display: flex;
+          justify-content: space-between;
+      }
+      button {
+          width: calc(50% - 5px); /* Cân đối chiều rộng của các nút */
+          padding: 10px 0;
+          border: none;
+          border-radius: 4px;
+          background-color: #0d5d49;
+          color: #fff;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+      }
+      .menu-btn{
+          width: auto;
+          padding: 6px;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          background-color: #0f1c28;
+          transition: background-color 0.3s ease;
+      }
+      /* CSS cho select */
+      .select {
+          width: 50%;
+          padding: 10px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          font-size: 16px;
+          appearance: none; /* Loại bỏ giao diện mặc định của select */
+          -webkit-appearance: none; /* Cho Safari */
+          -moz-appearance: none; /* Cho Firefox */
+          background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="5" viewBox="0 0 10 5"><path fill="%23343a40" d="M5 4.5L0 .5h10z"/></svg>'); /* Thêm mũi tên xuống */
+          background-repeat: no-repeat;
+          background-position: right 10px center;
+      }
+      button:hover {
+          background-color: #0f1c28;
+      }
+  </style>
+</head>
+<body>
+<div class="title-app">
+  <h2>Auto Subtitle Translation</h2>
+  <button class="menu-btn" onclick="addApiKey()">Thêm Key OpenAI</button>
+  <button class="menu-btn" onclick="addRequestDes()">Chỉnh sửa mô tả</button>
+  <textarea style="display: none;height: 100px;margin-top: 12px" id="description" placeholder="Nhập mô tả của yêu cầu..."></textarea>
+  <button class="menu-btn" style="display: none;" id="save-des" onclick="saveDes()">Cập nhật Mô tả</button>
+</div>
+<div class="container">
+  <div class="left" style="margin-top: 10px">
+    <label for="fileInput">
+      <button id="fileInputBtn" onclick="document.getElementById('fileInput').click(); return false;">Chọn tệp</button>
+    </label>
+    <input type="file" id="fileInput" accept=".srt,.vtt" style="display: none;">
+    <select id="language" class="select">
+      <option value="en" class="option">VietNames</option>
+      <option value="en" class="option">English</option>
+      <option value="es" class="option">Spanish</option>
+      <option value="zh" class="option">Chinese</option>
+      <option value="hi" class="option">Hindi</option>
+      <option value="fr" class="option">French</option>
+      <option value="de" class="option">German</option>
+      <option value="ja" class="option">Japanese</option>
+      <option value="ru" class="option">Russian</option>
+      <option value="pt" class="option">Portuguese</option>
+      <option value="ko" class="option">Korean</option>
+      <!-- Thêm các ngôn ngữ khác nếu cần -->
+    </select>
+    <textarea id="input" placeholder="Nội dung của tệp sẽ xuất hiện ở đây..."></textarea>
+    <button style="width: 40%" id="extract-btn" onclick="extractSubtitles()">Dịch</button>
+    <small style="margin-left: 30px">Temperature:</small>
+    <input value="0" id="temperature" title="The temperature parameter in the GPT API controls the level of randomness in generating responses. Value from 0.1 to 1" placeholder="Temperature" type="number" step="0.1" min="0" max="1">
+  </div>
+  <div class="right">
+    <h3>Kết quả:</h3>
+    <small class="errors" id="errors"></small>
+    <small style="position: absolute;top:20px;right:20px" id="status-result"></small>
+    <textarea id="output" placeholder="Kết quả sẽ hiển thị ở đây..."></textarea>
+    <div class="btn-group">
+      <button onclick="copyText()">Sao chép văn bản</button>
+      <button onclick="downloadFileSub()">Tải về tệp</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const defaultDescription= "Assume the role of a translation assistant, converting the following content into $languages line by line, and return the translated data in plain text format, with each line separated by a newline character. The content to be translated is as follows: $subtitles"
+  const defaultLang='English'
+  const defaultTemperature= 0
+  document.getElementById('fileInput').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      document.getElementById('input').value = event.target.result;
+    };
+    reader.readAsText(file);
+  });
+  function divideIntoBatches(subtitles) {
+    const maxText = 3200; // Giả sử đây là giới hạn kí tự tối đa cho mỗi batch
+    const descriptionLength = (document.getElementById('description').value || "").length || defaultDescription.length;
+    const totalMaxText = maxText - descriptionLength; // Tính tổng số kí tự tối đa cho mỗi batch
+    let batches = [];
+    let currentBatch = []; // Mảng con hiện tại
+    let currentLength = 0; // Độ dài hiện tại của mảng con
+    subtitles.forEach(subtitle => {
+      // Tính độ dài của chuỗi hiện tại cộng thêm 1 để tính cả dấu xuống dòng
+      const subtitleLength = subtitle.length + 2;
+
+      // Nếu thêm chuỗi hiện tại vào mảng con không vượt quá tổng số kí tự tối đa
+      if (currentLength + subtitleLength <= totalMaxText) {
+        currentBatch.push(subtitle);
+        currentLength += subtitleLength;
+      } else {
+        // Nếu thêm chuỗi hiện tại vào mảng con vượt quá tổng số kí tự tối đa
+        batches.push(currentBatch); // Đẩy mảng con hiện tại vào mảng batches
+        currentBatch = [subtitle]; // Tạo một mảng con mới và thêm chuỗi hiện tại vào đó
+        currentLength = subtitleLength; // Cập nhật độ dài của mảng con mới
+      }
+    });
+
+    // Đẩy mảng con cuối cùng vào mảng batches
+    if (currentBatch.length > 0) {
+      batches.push(currentBatch);
+    }
+    return batches;
+  }
+
+  async function extractSubtitles() {
+    document.getElementById('extract-btn').disabled = true
+    document.getElementById('output').value = null
+    document.getElementById('errors').innerText = null
+    document.getElementById('extract-btn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+
+    const input = document.getElementById("input").value;
+    const lines = input.split("\n");
+    let subtitles = [];
+    let timeCodes= []
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes("-->")) {
+          subtitles.push(lines[i+1].trim());
+          timeCodes.push(lines[i].trim());
+        }
+    }
+    const batchesText= divideIntoBatches(subtitles)
+    const batchesTime= []
+    batchesText.forEach((item, index)=>{
+      batchesTime.push(timeCodes.slice(index*item?.length,index*item?.length + item?.length))
+    })
+    const batchStatus = document.getElementById("status-result");
+    batchStatus.innerHTML = ` ...Đang xử lý: 0/${batchesText.length}`; // Xóa trạng thái trước đó
+    for (let index = 0; index < batchesText.length; index++) {
+      let retry= 0
+      let res = await translateToEnglish(index * 50 + 1, batchesTime[index], batchesText[index]);
+      while(retry < 3 && res.status ===-1){
+        res = await translateToEnglish(index * 50 + 1, batchesTime[index], batchesText[index]);
+        retry+=1
+      }
+      if(res.status===-2 || res.status===-1 && retry>= 3){
+        batchStatus.innerHTML = `Quá trình xử lý xảy ra lỗi !`;
+        break
+      }else {
+        batchStatus.innerHTML = `...Đang xử lý: ${index+1}/${batchesText.length}`; // Xóa trạng thái trước đó
+      }
+    }
+    batchStatus.innerHTML = ` Đã xử lý xong`; // Xóa trạng thái trước đó
+    document.getElementById('extract-btn').disabled=false
+    document.getElementById('extract-btn').innerHTML = 'Dịch';
+  }
+
+  function displaySubtitles(indexFrom,timeCodes,subtitles) {
+    const fileInput = document.getElementById('fileInput')
+    if(!fileInput?.files || !fileInput.files[0]?.name){
+      return
+    }
+    const items = fileInput.files[0]?.name.split('.')
+    const etx = items[items.length - 1].toLowerCase()
+    const output = document.getElementById("output");
+    let stringValue = output.value
+    if(indexFrom===1) {
+      if(etx==='srt'){
+        stringValue = "";
+      }else {
+        stringValue = "WEBVTT\n\n";
+      }
+    }
+    subtitles.forEach(function(subtitle, i) {
+      if(etx==='srt'){
+        stringValue+=  `${indexFrom + i}\n${timeCodes[i]}\n${subtitle}\n\n`
+      }else {
+        stringValue+=  `${timeCodes[i]}\n${subtitle}\n\n`
+      }
+
+      output.value=stringValue
+    });
+  }
+
+  function copyText() {
+    const outputText = document.getElementById("output").value;
+    navigator.clipboard.writeText(outputText)
+      .then(() => alert('Đã sao chép văn bản thành công!'))
+      .catch(err => console.error('Lỗi khi sao chép văn bản: ', err));
+  }
+  function downloadFileSub() {
+    // Tạo nội dung cho tệp SRT
+    const srtContent = document.getElementById('output').value
+    if(!srtContent) return
+
+    // Tạo đối tượng Blob
+    const blob = new Blob([srtContent], { type: "text/plain;charset=utf-8" });
+
+    // Tạo URL cho Blob
+    const url = URL.createObjectURL(blob);
+
+    // Tạo thẻ a để tạo và tải về tệp
+    const link = document.createElement("a");
+    link.href = url;
+    const fileInput = document.getElementById('fileInput')
+    if(fileInput?.files && fileInput.files[0]?.name){
+      link.download =  `eng_${fileInput.files[0]?.name}`
+      document.body.appendChild(link);
+      // Kích hoạt sự kiện click trên thẻ a
+      link.click();
+      // Loại bỏ thẻ a sau khi tải về hoàn thành
+      document.body.removeChild(link);
+    }
+  }
+
+
+  async function translateToEnglish(indexFrom, timeCodes, subtitles) {
+    if (!subtitles?.length || !timeCodes?.length) {
+      return;
+    }
+    const text = subtitles.join('\n');
+    const temperature = document.getElementById('temperature')?.value || defaultTemperature
+    const language = document.getElementById('language').value || defaultLang
+    const apiKey = localStorage.getItem("apiKey");
+    let description = localStorage.getItem("requestDes");
+    if (!description?.length){
+      description = defaultDescription
+    }
+
+    if (!apiKey) {
+      alert("Please add your API key first!");
+      return;
+    }
+
+    const headers = {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    };
+
+    const payload = {
+      "model": "gpt-3.5-turbo",
+      "messages": [
+        {
+          "role": "system",
+          "content": description.replace('$languages', language).replace('$subtitles', text)
+        },
+        { "role": "user", "content": text }
+      ],
+      "temperature": temperature,
+      "top_p": 0,
+      "n": 1,
+      "stream": false,
+      "presence_penalty": 0,
+      "frequency_penalty": 0
+    };
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        console.log(err);
+        throw new Error(`Translation failed: ${err.error.message}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      let subtitlesTrans = content.split('\n').map(function(subtitle) {
+        let cleanRes = subtitle.trim();
+        if(cleanRes?.length && cleanRes[0]==='-') cleanRes.substring(1)
+        if(cleanRes?.length && cleanRes[0]==='"') cleanRes.substring(1)
+        if(cleanRes?.length && cleanRes[cleanRes.length-1]==='"') cleanRes.substring(0, cleanRes.length - 1);
+        return cleanRes
+      });
+      if(subtitlesTrans.length!==subtitles.length){
+        return  {
+          status: -1,
+          data:subtitlesTrans
+        }
+      }
+      displaySubtitles(indexFrom, timeCodes, subtitlesTrans);
+      return  {
+        status: 1,
+        data:subtitlesTrans
+      }
+    } catch (error) {
+      document.getElementById('errors').innerText= error
+      return  {
+        status: -2,
+        data: null
+      }
+    }
+  }
+  function addApiKey() {
+    const apiKey = prompt("Vui lòng thêm Secret key OpenAI");
+    if (apiKey !== null && apiKey !== "") {
+      localStorage.setItem("apiKey", apiKey);
+      alert("Đã thêm thành công Secret key OpenAI");
+    }
+  }
+  function addRequestDes() {
+    const description=document.getElementById(
+      'description'
+    )
+    const btnSave = document.getElementById(
+      'save-des'
+    )
+    const defaultResquest = localStorage.getItem("requestDes")
+    if (defaultResquest){
+      description.value=defaultResquest
+    }else {
+      description.value= "Hãy đón vai trò là một trợ lý dịch thuật, chuyển đổi giúp tôi nội dung sau sang ngôn ngữ tiếng Anh (theo từng dòng), kết trả về ở định dạng json là list, KHÔNG ĐỀ CẬP GÌ THÊM NGOÀI KẾT QUẢ NÀY,  dữ liệu ở dạng text thuần, không bao gồm kí tự đầu dòng, nháy đơn, nháy kép hoặc số thứ tự. Nội dung cần dịch như sau: "
+    }
+    description.style.display='block'
+    btnSave.style.display='block'
+    // const requestDes = prompt("Vui lòng thêm mô tả cụ thể cho yêu cầu của bạn");
+    // if (requestDes !== null && requestDes !== "") {
+    //   localStorage.setItem("requestDes", requestDes);
+    //   alert("Đã thêm thành công yêu cầu");
+    // }
+  }
+  function saveDes() {
+    const description=document.getElementById(
+      'description'
+    )
+    const btnSave=document.getElementById(
+      'save-des'
+    )
+    if (description.value){
+      localStorage.setItem("requestDes",description.value)
+      description.style.display='none'
+      btnSave.style.display='none'
+    }
+
+    // const requestDes = prompt("Vui lòng thêm mô tả cụ thể cho yêu cầu của bạn");
+    // if (requestDes !== null && requestDes !== "") {
+    //   localStorage.setItem("requestDes", requestDes);
+    //   alert("Đã thêm thành công yêu cầu");
+    // }
+  }
+</script>
+</body>
+</html>
