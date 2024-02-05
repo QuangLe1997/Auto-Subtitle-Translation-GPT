@@ -325,7 +325,7 @@
 
   async function translateToEnglish(indexFrom, timeCodes, subtitles) {
     if (!subtitles?.length || !timeCodes?.length) {
-      return;
+      return {} ;
     }
     const text = subtitles.join('\n');
     const temperature = document.getElementById('temperature')?.value || defaultTemperature
@@ -338,7 +338,7 @@
 
     if (!apiKey) {
       alert("Please add your API key first!");
-      return;
+      return {};
     }
 
     const headers = {
@@ -387,6 +387,8 @@
         if(cleanRes?.length && cleanRes[cleanRes.length-1]==='"') cleanRes.substring(0, cleanRes.length - 1);
         return cleanRes
       });
+      console.log(subtitlesTrans);
+      console.log(subtitles);
       if(subtitlesTrans.length!==subtitles.length){
         return  {
           status: -1,
