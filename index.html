@@ -216,6 +216,11 @@
   }
 
   async function extractSubtitles() {
+    const apiKey = localStorage.getItem("apiKey");
+    if (!apiKey) {
+      alert("Please add your API key first!");
+      return;
+    }
     document.getElementById('extract-btn').disabled = true
     document.getElementById('output').value = null
     document.getElementById('errors').innerText = null
