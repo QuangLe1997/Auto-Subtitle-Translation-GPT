@@ -1,2 +1,2 @@
-# Auto-Subtitle-Translatio-GPTn
+# Auto-Subtitle-Translation-GPT
 Auto translation subtitle (srt, vtt) using api chatgpt
