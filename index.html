@@ -243,13 +243,15 @@
     })
     const batchStatus = document.getElementById("status-result");
     batchStatus.innerHTML = ` ...Đang xử lý: 0/${batchesText.length}`; // Xóa trạng thái trước đó
+    let indexFrom = 1
     for (let index = 0; index < batchesText.length; index++) {
       let retry= 0
-      let res = await translateToEnglish(index * 50 + 1, batchesTime[index], batchesText[index]);
+      let res = await translateToEnglish(indexFrom, batchesTime[index], batchesText[index]);
       while(retry < 3 && res.status ===-1){
-        res = await translateToEnglish(index * 50 + 1, batchesTime[index], batchesText[index]);
+        res = await translateToEnglish(indexFrom, batchesTime[index], batchesText[index]);
         retry+=1
       }
+      indexFrom+=batchesTime[index].length
       if(res.status===-2 || res.status===-1 && retry>= 3){
         batchStatus.innerHTML = `Quá trình xử lý xảy ra lỗi !`;
         break
@@ -388,7 +390,7 @@
       if(subtitlesTrans.length!==subtitles.length){
         return  {
           status: -1,
-          data:subtitlesTrans
+          data: subtitlesTrans
         }
       }
       displaySubtitles(indexFrom, timeCodes, subtitlesTrans);
